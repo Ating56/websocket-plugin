@@ -75,8 +75,10 @@ func (c *Client) WritePump() {
 	for {
 		select {
 		case data := <-c.Send:
-			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			c.Conn.WriteMessage(websocket.TextMessage, data["message"])
+			if c.ClientId == string(data["clientId"]) { // try 发给指定用户
+				c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+				c.Conn.WriteMessage(websocket.TextMessage, data["message"])
+			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			c.Conn.WriteMessage(websocket.PingMessage, nil)
