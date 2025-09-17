@@ -1,2 +1,3 @@
 # websocket-plugin
-websocket plugin in Go
+Websocket plugin in Go
+You can use it in your peogram to implement websocket chat.
