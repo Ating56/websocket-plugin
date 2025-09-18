@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sync"
 	wp "websocket-plugin"
 )
-
-var once sync.Once
 
 var RemoteAddr = wp.Config{
 	Route: "/ws",
@@ -43,8 +40,8 @@ func main() {
 		if err != nil {
 			return
 		}
-		fmt.Println("body", string(client.ClientId))
-		once.Do(func() { wp.NewConnect(&RemoteAddr, client.ClientId) })
+		fmt.Println("body", client.ClientId)
+		wp.NewConnect(&RemoteAddr, func() string { return client.ClientId })
 	})
 	http.Handle("/", http.FileServer(http.Dir("client")))
 	http.ListenAndServe(":8080", nil)

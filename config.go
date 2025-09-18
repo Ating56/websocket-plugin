@@ -18,14 +18,14 @@ type MongoDB struct {
 	Collection string
 }
 
-var once sync.Once
+var onceConfig sync.Once
 var (
 	GlobalRedis   *Redis
 	GlobalMongoDB *MongoDB
 )
 
 func NewConfig(c ...any) (*Redis, *MongoDB) {
-	once.Do(func() {
+	onceConfig.Do(func() {
 		for _, v := range c {
 			switch v.(type) {
 			case Redis:

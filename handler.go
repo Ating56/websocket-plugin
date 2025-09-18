@@ -1,6 +1,7 @@
 package websocketplugin
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -28,16 +29,19 @@ var upgrader = websocket.Upgrader{
 // - hub: 全局连接管理器实例
 // - w: 响应写入器
 // - r: 包含请求头等信息的HTTP请求对象
-func WsHandler(hub *Hub, conf *Config, clientId string) http.HandlerFunc {
+func WsHandler(hub *Hub, conf *Config, f func() string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("r ---> %+v\n", r)
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("Upgrade error:", err)
 			return
 		}
 
+		nowClientId := GetClientId()
+
 		connectClient := &Client{
-			ClientId:   clientId,
+			ClientId:   nowClientId,
 			Conn:       conn,
 			RemoteAddr: r.RemoteAddr,
 		}
