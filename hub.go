@@ -25,13 +25,18 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			log.Printf("New client registered: %s\n", client.RemoteAddr)
+			log.Printf("New client registered: %s and clientId is: %s\n", client.RemoteAddr, client.ClientId)
 			h.clients[client] = true
+			GlobalRecv.Store(client.ClientId, make(chan map[string][]byte, 256))
+
+			go client.sendToClient()
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				log.Printf("Client unregistered: %s\n", client.RemoteAddr)
 				delete(h.clients, client)
-				close(client.Send)
+				// if recvChan, ok := GlobalRecv.Load(client.ClientId); ok {
+				// 	close(recvChan.(chan map[string][]byte)) // todo 优化 关闭通道持续触发 client.go的 data := <-targetChan.(chan map[string][]byte)
+				// }
 			}
 		}
 	}

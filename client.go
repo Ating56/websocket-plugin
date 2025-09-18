@@ -2,62 +2,32 @@ package websocketplugin
 
 import (
 	"fmt"
-	"log"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 type Client struct {
-	ClientId   string // 等效于用户Id
+	ClientId   string // 等效于发送用户Id
 	Conn       *websocket.Conn
-	Send       chan map[string][]byte
 	RemoteAddr string
 }
 
-var GlobalClient *Client
+var GlobalRecv sync.Map
 
-// ReadPump 持续监听并处理客户端消息
-// 实现原理：
-// 1. 设置心跳超时（60秒）和Pong响应处理器
-// 2. 读取消息并写入消息通道
-// 3. 异常时注销连接并关闭通道
-// 注意：
-// - 使用defer确保连接最终关闭
-// - 消息格式化为JSON包含客户端IP
-func (c *Client) ReadPump() {
-	defer func() {
-		GlobalHub.unregister <- GlobalClient
-		c.Conn.Close()
-	}()
-
-	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
-
-	for {
-		_, message, err := c.Conn.ReadMessage()
-		if err != nil {
-			break
-		}
-		msg := fmt.Sprintf("{\"ip\":\"%s\",\"message\":\"%s\"}", c.RemoteAddr, message)
-		msgMap := map[string][]byte{
-			"clientId": []byte(c.ClientId),
-			"message":  []byte(msg),
-		}
-		select {
-		case c.Send <- msgMap:
-		default:
-			log.Printf("Client %s queue full, disconnecting", c.RemoteAddr)
-			close(c.Send)
-		}
-		log.Printf("Received from %s: %s", c.RemoteAddr, message)
+func sendToServer(targetId, text string) {
+	msg := map[string][]byte{
+		"targetId": []byte(targetId),
+		"message":  []byte(text),
+	}
+	fmt.Println("sendToServer targetId:", targetId, "text:", msg)
+	if recvChan, ok := GlobalRecv.Load(targetId); ok {
+		recvChan.(chan map[string][]byte) <- msg
 	}
 }
 
-// WritePump 持续发送消息到客户端
+// sendToClient 持续发送消息到客户端
 // 工作流程：
 // 1. 创建30秒间隔的心跳ticker
 // 2. 监听消息通道和心跳事件
@@ -65,7 +35,7 @@ func (c *Client) ReadPump() {
 // 注意：
 // - 设置10秒写超时防止阻塞
 // - 通道关闭时退出循环
-func (c *Client) WritePump() {
+func (c *Client) sendToClient() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer func() {
 		ticker.Stop()
@@ -73,11 +43,20 @@ func (c *Client) WritePump() {
 	}()
 
 	for {
+		targetChan, ok := GlobalRecv.Load(c.ClientId)
+		fmt.Println("targetChan:", targetChan)
+		if !ok {
+			return
+		}
 		select {
-		case data := <-c.Send:
-			if c.ClientId == string(data["clientId"]) { // try 发给指定用户
+		case data := <-targetChan.(chan map[string][]byte):
+			fmt.Println("data", data)
+			fmt.Println("c.ClientId:", c.ClientId)
+			fmt.Println("data[\"targetId\"]:", string(data["targetId"]))
+			if c.ClientId == string(data["targetId"]) { // try 发给指定用户
 				c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 				c.Conn.WriteMessage(websocket.TextMessage, data["message"])
+				fmt.Println("success write")
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
