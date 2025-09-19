@@ -14,8 +14,19 @@ type Client struct {
 	RemoteAddr string
 }
 
+/*
+ * GlobalRecv
+ * 全局的接收通道，对每个连接的client，建立一个消息接收通道
+ * clientId 作为key，消息接收通道作为value
+ */
 var GlobalRecv sync.Map
 
+/*
+ * SendToServer
+ * 客户端发送消息到服务端，服务端检测接收方是否在线
+ * 如果在线，将消息写入接收方的消息接收通道并持久化存储
+ * 如果不在线，将消息持久化存储
+ */
 func SendToServer(clientId, targetId string, msgDetail []byte) {
 	msg := map[string][]byte{
 		"targetId":  []byte(targetId),
@@ -28,14 +39,14 @@ func SendToServer(clientId, targetId string, msgDetail []byte) {
 	// todo 持久化存储消息
 }
 
-// sendToClient 持续发送消息到客户端
-// 工作流程：
-// 1. 创建30秒间隔的心跳ticker
-// 2. 监听消息通道和心跳事件
-// 3. 处理消息发送或Ping心跳包
-// 注意：
-// - 设置10秒写超时防止阻塞
-// - 通道关闭时退出循环
+/*
+ * SendToClient
+ * 服务端将消息发给客户端
+ * 创建30秒间隔的心跳ticker
+ * 监听消息通道和心跳事件
+ * 处理消息发送或Ping心跳包
+ * - 设置10秒写超时防止阻塞
+ */
 func (c *Client) SendToClient() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer func() {

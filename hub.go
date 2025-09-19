@@ -8,19 +8,19 @@ type Hub struct {
 	unregister chan *Client
 }
 
+/*
+ * GlobalHub
+ * 全局的Hub，管理所有连接的clients
+ * client建立连接 -> 写入register
+ * client关闭连接 -> 写入unregister
+ */
 var GlobalHub *Hub = &Hub{
 	clients:    make(map[*Client]bool),
 	register:   make(chan *Client),
 	unregister: make(chan *Client),
 }
 
-// Run 启动Hub的事件循环
-// 采用select多路复用实现事件调度，处理流程：
-// 1. 接收注册请求：将客户端加入映射表并记录日志
-// 2. 接收注销请求：安全移除客户端并关闭消息通道
-// 注意事项：
-// - 使用无缓冲通道确保事件顺序处理
-// - close(client.Send) 避免通道泄漏
+// Run 启动服务就开启协程，GlobalHub.Run()，监听client的注册和注销
 func (h *Hub) Run() {
 	for {
 		select {

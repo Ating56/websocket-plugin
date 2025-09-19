@@ -24,6 +24,12 @@ var (
 	GlobalMongoDB *MongoDB
 )
 
+/*
+ * NewConfig
+ * 初始化配置
+ * 接收Redis和MongoDB配置参数
+ * 初始化Redis和MongoDB连接
+ */
 func NewConfig(c ...any) (*Redis, *MongoDB) {
 	onceConfig.Do(func() {
 		for _, v := range c {
