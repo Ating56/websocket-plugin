@@ -29,7 +29,7 @@ func (h *Hub) Run() {
 			h.clients[client] = true
 			GlobalRecv.Store(client.ClientId, make(chan map[string][]byte, 256))
 
-			go client.sendToClient()
+			go client.SendToClient()
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				log.Printf("Client unregistered: %s\n", client.RemoteAddr)

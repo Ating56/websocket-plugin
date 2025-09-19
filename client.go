@@ -16,12 +16,12 @@ type Client struct {
 
 var GlobalRecv sync.Map
 
-func sendToServer(targetId, text string) {
+func SendToServer(targetId, text string) {
 	msg := map[string][]byte{
 		"targetId": []byte(targetId),
 		"message":  []byte(text),
 	}
-	fmt.Println("sendToServer targetId:", targetId, "text:", msg)
+	fmt.Println("SendToServer targetId:", targetId, "text:", msg)
 	if recvChan, ok := GlobalRecv.Load(targetId); ok {
 		recvChan.(chan map[string][]byte) <- msg
 	}
@@ -35,7 +35,7 @@ func sendToServer(targetId, text string) {
 // 注意：
 // - 设置10秒写超时防止阻塞
 // - 通道关闭时退出循环
-func (c *Client) sendToClient() {
+func (c *Client) SendToClient() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer func() {
 		ticker.Stop()

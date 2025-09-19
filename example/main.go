@@ -2,6 +2,7 @@ package main
 
 import (
 	// "github.com/Ating56/websocket-plugin"
+
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,9 +10,6 @@ import (
 	wp "websocket-plugin"
 )
 
-var RemoteAddr = wp.Config{
-	Route: "/ws",
-}
 var Redis = wp.Redis{
 	Host:     "127.0.0.1:6379",
 	Password: "",
@@ -23,25 +21,31 @@ var MongoDB = wp.MongoDB{
 	Collection: "websocket",
 }
 
-type Client struct {
-	ClientId string
+type Target struct {
+	TargetId string
+	Content  string
 }
 
 func main() {
 	wp.NewConfig(Redis, MongoDB)
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		clientId := r.Header.Get("Sec-WebSocket-Protocol")
+		wp.SetConnect(w, r, clientId)
+	})
+	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
+		var target Target
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return
 		}
 		defer r.Body.Close()
-		var client Client
-		err = json.Unmarshal(body, &client)
+		err = json.Unmarshal(body, &target)
 		if err != nil {
 			return
 		}
-		fmt.Println("body", client.ClientId)
-		wp.NewConnect(&RemoteAddr, func() string { return client.ClientId })
+		fmt.Println("body", target.TargetId)
+
+		wp.SendToServer(target.TargetId, target.Content)
 	})
 	http.Handle("/", http.FileServer(http.Dir("client")))
 	http.ListenAndServe(":8080", nil)

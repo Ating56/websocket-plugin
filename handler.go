@@ -1,7 +1,6 @@
 package websocketplugin
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -10,41 +9,32 @@ import (
 
 // WebSocket升级器配置
 // 关键参数说明：
+// - Subprotocols: 子协议列表，用于协商连接协议（当前配置为接收Sec-WebSocket-Protocol头）
 // - CheckOrigin: 跨域验证函数（当前配置允许所有来源，生产环境应限制域名）
 // 可扩展配置项：
 // - HandshakeTimeout: 握手超时时间（默认0-无限制）
 // - ReadBufferSize/WriteBufferSize: 读写缓冲区大小（单位字节）
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+var upgrader = func(r *http.Request) *websocket.Upgrader {
+	return &websocket.Upgrader{
+		Subprotocols: []string{r.Header.Get("Sec-WebSocket-Protocol")},
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
 }
 
-// WsHandler 处理WebSocket连接请求
-// 流程说明：
-// 1. 升级HTTP连接到WebSocket协议
-// 2. 初始化客户端实例并注册到Hub
-// 3. 启动读写协程维护双工通信
-// 参数说明：
-// - hub: 全局连接管理器实例
-// - w: 响应写入器
-// - r: 包含请求头等信息的HTTP请求对象
-func WsHandler(hub *Hub, conf *Config, f func() string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("r ---> %+v\n", r)
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Println("Upgrade error:", err)
-			return
-		}
-
-		nowClientId := GetClientId()
-
-		connectClient := &Client{
-			ClientId:   nowClientId,
-			Conn:       conn,
-			RemoteAddr: r.RemoteAddr,
-		}
-		hub.register <- connectClient
+func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) {
+	go GlobalHub.Run()
+	conn, err := upgrader(r).Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Upgrade error:", err)
+		return
 	}
+
+	connectClient := &Client{
+		ClientId:   clientId,
+		Conn:       conn,
+		RemoteAddr: r.RemoteAddr,
+	}
+	GlobalHub.register <- connectClient
 }
