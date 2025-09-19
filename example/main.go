@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"time"
 	wp "websocket-plugin"
 )
 
@@ -21,9 +23,13 @@ var MongoDB = wp.MongoDB{
 	Collection: "websocket",
 }
 
-type Target struct {
-	TargetId string
-	Content  string
+// 消息结构体自定义，可包含前端传来的字段，额外再加发送者的id
+type Message struct {
+	MsgId     string
+	SenderId  string
+	ReceiveId string
+	Content   string
+	Time      string
 }
 
 func main() {
@@ -33,19 +39,31 @@ func main() {
 		wp.SetConnect(w, r, clientId)
 	})
 	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
-		var target Target
+		var target Message
+		clientId := r.Header.Get("ClientId")
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return
 		}
 		defer r.Body.Close()
+
 		err = json.Unmarshal(body, &target)
 		if err != nil {
 			return
 		}
-		fmt.Println("body", target.TargetId)
 
-		wp.SendToServer(target.TargetId, target.Content)
+		target.MsgId = fmt.Sprintf("msg%d", time.Now().Unix()) // 消息唯一id，可自定义
+		target.SenderId = clientId
+		target.Time = time.Now().Format("2006-01-02 15:04:05")
+
+		dataSendToWs, err := json.Marshal(target)
+		if err != nil {
+			log.Println("json转化失败")
+			return
+		}
+		fmt.Println("body", target.ReceiveId, target.Content, clientId)
+
+		wp.SendToServer(clientId, target.ReceiveId, dataSendToWs)
 	})
 	http.Handle("/", http.FileServer(http.Dir("client")))
 	http.ListenAndServe(":8080", nil)

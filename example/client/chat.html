@@ -397,6 +397,7 @@
     </div>
 
     <script>
+        const now_clientId = '1'; // 当前用户clientId
         // 模拟联系人数据
         const contacts = [
             { id: '1', name: '张三', avatar: '张', avatarClass: 'avatar-1', status: '在线', unreadCount: 2, lastMessage: '明天一起吃午饭吧？', lastMessageTime: '10:23' },
@@ -554,7 +555,7 @@
             }
 
             try {
-                ws = new WebSocket('ws://127.0.0.1:8080/ws', ['1']);
+                ws = new WebSocket('ws://127.0.0.1:8080/ws', [now_clientId]);
 
                 ws.onopen = function() {
                     console.log('WebSocket连接已建立');
@@ -564,18 +565,17 @@
                 };
 
                 ws.onmessage = function(event) {
-                    console.log('收到消息:', event.data);
+                    console.log('event', event);
                     try {
                         const data = JSON.parse(event.data);
-                        // 假设服务器消息格式为 { targetId, content }
-                        if (data.targetId === currentChatId) {
+                        console.log('data:', data);
+
+                        if (data.SenderId === currentChatId) {
                             // 添加收到的消息到当前聊天窗口
-                            const now = new Date();
-                            const timeString = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
-                            addMessageToUI('other', data.content, timeString);
+                            addMessageToUI('other', data.Content, data.Time);
                             
                             // 更新联系人列表的最后消息
-                            updateContactLastMessage(currentChatId, data.content, timeString);
+                            updateContactLastMessage(currentChatId, data.Content, data.Time);
                         }
                     } catch (e) {
                         // 处理非JSON格式的消息
@@ -637,12 +637,10 @@
             if (!chatHistories[currentChatId]) {
                 chatHistories[currentChatId] = [];
             }
-            chatHistories[currentChatId].push({
-                id: 'm' + Date.now(),
-                sender: 'me',
-                content: content,
-                time: timeString
-            });
+            const msgDetail = {
+                content: content
+            }
+            chatHistories[currentChatId].push(msgDetail);
             
             // 更新UI
             addMessageToUI('me', content, timeString);
@@ -656,10 +654,11 @@
         }
 
         // xhr send
-        function send(targetId, content) {
+        function send(receiveId, content) {
             xhr.open('POST', 'http://127.0.0.1:8080/send', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.send(JSON.stringify({ targetId: targetId, content: content }));
+            xhr.setRequestHeader('ClientId', now_clientId);
+            xhr.send(JSON.stringify({ receiveId: receiveId, content: content }));
         }
 
         // 更新联系人的最后消息

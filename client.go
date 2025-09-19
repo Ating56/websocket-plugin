@@ -1,7 +1,7 @@
 package websocketplugin
 
 import (
-	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -16,15 +16,16 @@ type Client struct {
 
 var GlobalRecv sync.Map
 
-func SendToServer(targetId, text string) {
+func SendToServer(clientId, targetId string, msgDetail []byte) {
 	msg := map[string][]byte{
-		"targetId": []byte(targetId),
-		"message":  []byte(text),
+		"targetId":  []byte(targetId),
+		"msgDetail": msgDetail,
 	}
-	fmt.Println("SendToServer targetId:", targetId, "text:", msg)
+	log.Println("SendToServer targetId:", targetId, "msgDetail:", msgDetail)
 	if recvChan, ok := GlobalRecv.Load(targetId); ok {
 		recvChan.(chan map[string][]byte) <- msg
 	}
+	// todo 持久化存储消息
 }
 
 // sendToClient 持续发送消息到客户端
@@ -44,19 +45,17 @@ func (c *Client) SendToClient() {
 
 	for {
 		targetChan, ok := GlobalRecv.Load(c.ClientId)
-		fmt.Println("targetChan:", targetChan)
 		if !ok {
 			return
 		}
 		select {
 		case data := <-targetChan.(chan map[string][]byte):
-			fmt.Println("data", data)
-			fmt.Println("c.ClientId:", c.ClientId)
-			fmt.Println("data[\"targetId\"]:", string(data["targetId"]))
+			log.Println("data", data)
+			log.Println("c.ClientId:", c.ClientId)
+			log.Println("data[\"targetId\"]:", string(data["targetId"]))
 			if c.ClientId == string(data["targetId"]) { // try 发给指定用户
 				c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-				c.Conn.WriteMessage(websocket.TextMessage, data["message"])
-				fmt.Println("success write")
+				c.Conn.WriteMessage(websocket.TextMessage, data["msgDetail"])
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
