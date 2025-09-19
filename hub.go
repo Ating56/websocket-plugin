@@ -3,7 +3,7 @@ package websocketplugin
 import "log"
 
 type Hub struct {
-	clients    map[*Client]bool
+	clients    map[string]*Client
 	register   chan *Client
 	unregister chan *Client
 }
@@ -15,7 +15,7 @@ type Hub struct {
  * client关闭连接 -> 写入unregister
  */
 var GlobalHub *Hub = &Hub{
-	clients:    make(map[*Client]bool),
+	clients:    make(map[string]*Client),
 	register:   make(chan *Client),
 	unregister: make(chan *Client),
 }
@@ -26,17 +26,18 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.register:
 			log.Printf("New client registered: %s and clientId is: %s\n", client.RemoteAddr, client.ClientId)
-			h.clients[client] = true
+			h.clients[client.ClientId] = client
 			GlobalRecv.Store(client.ClientId, make(chan map[string][]byte, 256))
 
 			go client.SendToClient()
 		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
+			if _, ok := h.clients[client.ClientId]; ok {
 				log.Printf("Client unregistered: %s\n", client.RemoteAddr)
-				delete(h.clients, client)
-				// if recvChan, ok := GlobalRecv.Load(client.ClientId); ok {
-				// 	close(recvChan.(chan map[string][]byte)) // todo 优化 关闭通道持续触发 client.go的 data := <-targetChan.(chan map[string][]byte)
-				// }
+				delete(h.clients, client.ClientId)
+				if recvChan, ok := GlobalRecv.Load(client.ClientId); ok {
+					close(recvChan.(chan map[string][]byte)) // todo 优化 关闭通道持续触发 client.go的 data := <-targetChan.(chan map[string][]byte)
+					GlobalRecv.Delete(client.ClientId)
+				}
 			}
 		}
 	}

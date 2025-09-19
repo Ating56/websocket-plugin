@@ -128,92 +128,93 @@
     </style>
 </head>
 <body>
-<div class="container">
-    <h1 style="color: var(--primary); margin-bottom: 1.5rem;">WebSocket聊天室</h1>
+    <div class="container">
+        <h1 style="color: var(--primary); margin-bottom: 1.5rem;">WebSocket聊天室</h1>
+        
+        <div class="btn-group">
+            <button id="sendBtn" onclick="send()">模拟发送</button>
+            <button id="connectBtn" onclick="connect()">🟢 连接服务器</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>🔴 断开连接</button>
+        </div>
 
-    <div class="btn-group">
-        <button id="loginBtn" onclick="login()">登录</button>
-        <button id="sendBtn" onclick="send()">模拟发送</button>
-        <button id="connectBtn" onclick="connect()">🟢 连接服务器</button>
-        <button id="disconnectBtn" onclick="disconnect()" disabled>🔴 断开连接</button>
+        <div class="input-group">
+            <input type="text" id="messageInput" placeholder="输入聊天内容..." disabled>
+            <button onclick="sendMessage()" disabled id="sendBtn">发送</button>
+        </div>
+
+        <div id="messages"></div>
     </div>
 
-    <div class="input-group">
-        <input type="text" id="messageInput" placeholder="输入聊天内容..." disabled>
-        <button onclick="sendMessage()" disabled id="sendBtn">发送</button>
-    </div>
+    <script>
+        let xhr = new XMLHttpRequest();
+        let ws = null;
 
-    <div id="messages"></div>
-</div>
-
-<script>
-    let xhr = new XMLHttpRequest();
-    let ws = null;
-
-    function login() {
-        xhr.open('POST', '/login', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify({ clientId: '1' }));
-    }
-
-    function send() {
-        xhr.open('POST', '/send', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify({ targetId: '1' }));
-    }
-
-    function connect() {
-        ws = new WebSocket('ws://127.0.0.1:8080/ws');
-
-        ws.onopen = function() {
-            log('连接成功');
-            document.getElementById('connectBtn').disabled = true;
-            document.getElementById('disconnectBtn').disabled = false;
-            document.getElementById('sendBtn').disabled = false;
-            document.getElementById('messageInput').disabled = false;
-        };
-
-        ws.onclose = function() {
-            log('连接关闭');
-            document.getElementById('connectBtn').disabled = false;
-            document.getElementById('disconnectBtn').disabled = true;
-            document.getElementById('sendBtn').disabled = true;
-            document.getElementById('messageInput').disabled = true;
-        };
-
-        ws.onmessage = function(event) {
-            console.log("event --->", event)
-            const data = JSON.parse(event.data);
-            log(`[${data.ip}] 消息: ${data.message}`);
-        };
-    }
-
-    function disconnect() {
-        if (ws) {
-            ws.close();
+        function send() {
+            xhr.open('POST', 'http://127.0.0.1:8080/send', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({ targetId: '0' }));
         }
-    }
 
-    function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const message = input.value.trim();
-        if (message && ws) {
-            ws.send(message);
-            input.value = '';
+        function connect() {
+            ws = new WebSocket('ws://127.0.0.1:8080/ws', ['1']);
+            
+            ws.onopen = function() {
+                log('连接成功');
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('messageInput').disabled = false;
+            };
+
+            ws.onclose = function() {
+                log('连接关闭');
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('sendBtn').disabled = true;
+                document.getElementById('messageInput').disabled = true;
+            };
+
+            ws.onmessage = function(event) {
+                console.log("event --->", event)
+                const data = JSON.parse(event.data);
+                log(`[${data.ip}] 消息: ${data.message}`);
+            };
         }
-    }
 
-    function log(message, type) {
-        const messagesDiv = document.getElementById('messages');
-        const timeStamp = new Date().toLocaleTimeString();
+        function xhrClose() {
+            xhr.open('POST', 'http://127.0.0.1:8080/close', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('ClientId', '1');
+            xhr.send();
+        }
 
-        messagesDiv.innerHTML += `
+        function disconnect() {
+            if (ws) {
+                xhrClose();
+                ws.close();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message && ws) {
+                ws.send(message);
+                input.value = '';
+            }
+        }
+
+        function log(message, type) {
+            const messagesDiv = document.getElementById('messages');
+            const timeStamp = new Date().toLocaleTimeString();
+
+            messagesDiv.innerHTML += `
                 <div class="message">
                     <div class="time">${timeStamp}</div>
                     <div class="content">${message}</div>
                 </div>`;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-</script>
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
 </body>
 </html>

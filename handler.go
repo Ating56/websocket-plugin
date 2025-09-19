@@ -46,3 +46,12 @@ func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) {
 	}
 	GlobalHub.register <- connectClient
 }
+
+func SetDisconnect(clientId string) {
+	client, ok := GlobalHub.clients[clientId]
+	if !ok {
+		log.Printf("Client not found: %s\n", clientId)
+		return
+	}
+	GlobalHub.unregister <- client
+}

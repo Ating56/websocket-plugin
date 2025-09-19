@@ -61,10 +61,8 @@ func (c *Client) SendToClient() {
 		}
 		select {
 		case data := <-targetChan.(chan map[string][]byte):
-			log.Println("data", data)
-			log.Println("c.ClientId:", c.ClientId)
 			log.Println("data[\"targetId\"]:", string(data["targetId"]))
-			if c.ClientId == string(data["targetId"]) { // try 发给指定用户
+			if c.ClientId == string(data["targetId"]) {
 				c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 				c.Conn.WriteMessage(websocket.TextMessage, data["msgDetail"])
 			}

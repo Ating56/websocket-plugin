@@ -65,6 +65,10 @@ func main() {
 
 		wp.SendToServer(clientId, target.ReceiveId, dataSendToWs)
 	})
+	http.HandleFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		clientId := r.Header.Get("ClientId")
+		wp.SetDisconnect(clientId)
+	})
 	http.Handle("/", http.FileServer(http.Dir("client")))
 	http.ListenAndServe(":8080", nil)
 }

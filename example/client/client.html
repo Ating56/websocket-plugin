@@ -132,7 +132,6 @@
         <h1 style="color: var(--primary); margin-bottom: 1.5rem;">WebSocket聊天室</h1>
         
         <div class="btn-group">
-            <button id="loginBtn" onclick="login()">登录</button>
             <button id="sendBtn" onclick="send()">模拟发送</button>
             <button id="connectBtn" onclick="connect()">🟢 连接服务器</button>
             <button id="disconnectBtn" onclick="disconnect()" disabled>🔴 断开连接</button>
@@ -150,20 +149,14 @@
         let xhr = new XMLHttpRequest();
         let ws = null;
 
-        function login() {
-            xhr.open('POST', '/login', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.send(JSON.stringify({ clientId: '0' }));
-        }
-
         function send() {
-            xhr.open('POST', '/send', true);
+            xhr.open('POST', 'http://127.0.0.1:8080/send', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify({ targetId: '1' }));
         }
 
         function connect() {
-            ws = new WebSocket('ws://127.0.0.1:8080/ws');
+            ws = new WebSocket('ws://127.0.0.1:8080/ws', ['0']);
             
             ws.onopen = function() {
                 log('连接成功');
@@ -188,8 +181,16 @@
             };
         }
 
+        function xhrClose() {
+            xhr.open('POST', 'http://127.0.0.1:8080/close', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('ClientId', '0');
+            xhr.send();
+        }
+
         function disconnect() {
             if (ws) {
+                xhrClose();
                 ws.close();
             }
         }
