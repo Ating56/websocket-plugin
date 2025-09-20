@@ -23,7 +23,8 @@ var MongoDB = wp.MongoDB{
 	Collection: "websocket",
 }
 
-// 消息结构体自定义，可包含前端传来的字段，额外再加发送者的id
+// 消息结构体自定义, 可包含前端传来的字段, 额外再加发送者的id
+// 发送人和接收人在自己的工程中记录, 并加入message
 type Message struct {
 	MsgId     string
 	SenderId  string

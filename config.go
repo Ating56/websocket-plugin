@@ -29,6 +29,7 @@ var (
  * 初始化配置
  * 接收Redis和MongoDB配置参数
  * 初始化Redis和MongoDB连接
+ * @param Redis配置参数结构体; MongoDB配置参数结构体
  */
 func NewConfig(c ...any) (*Redis, *MongoDB) {
 	onceConfig.Do(func() {

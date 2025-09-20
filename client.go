@@ -16,18 +16,19 @@ type Client struct {
 
 /*
  * GlobalRecv
- * 全局的接收通道，对每个连接的client，建立一个消息接收通道
- * clientId 作为key，消息接收通道作为value
+ * 全局的接收通道, 对每个连接的client, 建立一个消息接收通道
+ * clientId 作为key, 消息接收通道作为value
  */
 var GlobalRecv sync.Map
 
 /*
  * SendToServer
- * 客户端发送消息到服务端，服务端检测接收方是否在线
- * 如果在线，将消息写入接收方的消息接收通道并持久化存储
- * 如果不在线，将消息持久化存储
+ * 客户端发送消息到服务端, 服务端检测接收方是否在线
+ * 如果在线, 将消息写入接收方的消息接收通道并持久化存储
+ * 如果不在线, 将消息持久化存储
+ * @param clientId 连接的客户端ID; targetId 发送目标客户端ID; msgDetail 消息相关内容，[]byte格式
  */
-func SendToServer(clientId, targetId string, msgDetail []byte) {
+func SendToServer(clientId, targetId string, msgDetail []byte) error {
 	msg := map[string][]byte{
 		"targetId":  []byte(targetId),
 		"msgDetail": msgDetail,
@@ -37,6 +38,11 @@ func SendToServer(clientId, targetId string, msgDetail []byte) {
 		recvChan.(chan map[string][]byte) <- msg
 	}
 	// todo 持久化存储消息
+	err := storeInRedis(clientId, targetId, string(msgDetail))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 /*

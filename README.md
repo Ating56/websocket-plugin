@@ -6,6 +6,8 @@ You can use it in your program to implement websocket chat.
 - upgrader设置了 Subprotocols: []string{r.Header.Get("Sec-WebSocket-Protocol")}，用于身份认证
 - 前端建立连接时ws = new WebSocket('ws://127.0.0.1:8080/ws', ['1'])，传递第二个参数，可传递token，使用r.Header.Get("Sec-WebSocket-Protocol")接收
 - 暂不支持自我对话
+- 最新一条消息存储到redis
+- 所有消息存储到mongo
 
 todo
 - example接收到消息，判断是哪个对话的，添加未读/置顶；或弹出提示框XXX发来消息

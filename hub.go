@@ -10,7 +10,7 @@ type Hub struct {
 
 /*
  * GlobalHub
- * 全局的Hub，管理所有连接的clients
+ * 全局的Hub, 管理所有连接的clients
  * client建立连接 -> 写入register
  * client关闭连接 -> 写入unregister
  */
@@ -20,7 +20,7 @@ var GlobalHub *Hub = &Hub{
 	unregister: make(chan *Client),
 }
 
-// Run 启动服务就开启协程，GlobalHub.Run()，监听client的注册和注销
+// Run 启动服务就开启协程, GlobalHub.Run(), 监听client的注册和注销
 func (h *Hub) Run() {
 	for {
 		select {
