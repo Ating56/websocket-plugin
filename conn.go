@@ -30,6 +30,7 @@ var upgrader = func(r *http.Request) *websocket.Upgrader {
  * 客户端连接到服务端
  * 升级HTTP连接为WebSocket连接
  * 注册新client到GlobalHub
+ * @param w http.ResponseWriter; r * http.Request; clientId 连接的客户端ID
  */
 func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) {
 	go GlobalHub.Run()
@@ -47,6 +48,11 @@ func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) {
 	GlobalHub.register <- connectClient
 }
 
+/*
+ * SetDisConnect
+ * 客户端断开连接，写入GlobalHub的unregister
+ * @param clientId 连接的客户端ID
+ */
 func SetDisconnect(clientId string) {
 	client, ok := GlobalHub.clients[clientId]
 	if !ok {
