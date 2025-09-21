@@ -33,6 +33,14 @@ type Message struct {
 	Time      string
 }
 
+type MongoListReq struct {
+	TargetId             string `json:"targetId"`
+	LastMessageId        string `json:"lastMessageId"`
+	LastMessageTimeStamp int64  `json:"lastMessageTimeStamp"`
+	Gap                  int64  `json:"gap"`
+	Limit                int64  `json:"limit"`
+}
+
 func main() {
 	wp.NewConfig(Redis, MongoDB)
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +77,33 @@ func main() {
 	http.HandleFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		clientId := r.Header.Get("ClientId")
 		wp.SetDisconnect(clientId)
+	})
+	http.HandleFunc("/getRedisList", func(w http.ResponseWriter, r *http.Request) {
+		clientId := r.Header.Get("ClientId")
+		targetId := r.Header.Get("TargetId")
+		res := wp.GetMessageListInRedis(clientId, targetId)
+		json.NewEncoder(w).Encode(res)
+	})
+	http.HandleFunc("/getMongoList", func(w http.ResponseWriter, r *http.Request) {
+		clientId := r.Header.Get("ClientId")
+		var mongoListReq MongoListReq
+		err := json.NewDecoder(r.Body).Decode(&mongoListReq)
+		if err != nil {
+			http.Error(w, "json解析失败", http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+		res, err := wp.GetMessageListInMongo(clientId,
+			mongoListReq.TargetId,
+			mongoListReq.LastMessageId,
+			mongoListReq.LastMessageTimeStamp,
+			mongoListReq.Gap,
+			mongoListReq.Limit)
+		if err != nil {
+			http.Error(w, "查询失败", http.StatusBadRequest)
+			return
+		}
+		json.NewEncoder(w).Encode(res)
 	})
 	http.Handle("/", http.FileServer(http.Dir("client")))
 	http.ListenAndServe(":8080", nil)

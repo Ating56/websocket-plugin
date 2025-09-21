@@ -33,6 +33,11 @@ func storeInRedis(clientId, targetId, msgDetail string) error {
 		return errors.New("存储到Redis失败: " + clientId + "to" + targetId)
 	}
 
+	// clientId与targetId一样，不重复存储
+	if clientId == targetId {
+		return nil
+	}
+
 	_, err = rdb.TxPipelined(context.Background(), func(pipeliner redis.Pipeliner) error {
 		len2 := pipeliner.LLen(context.Background(), key2).Val()
 		if len2 > 10 {
@@ -47,4 +52,17 @@ func storeInRedis(clientId, targetId, msgDetail string) error {
 	}
 
 	return nil
+}
+
+/*
+ * GetMessageListInRedis
+ * 获取redis中与目标客户端的消息列表
+ * @param clientId 客户端ID; targetId 目标客户端ID
+ */
+func GetMessageListInRedis(clientId, targetId string) []string {
+	rdb := GetRDB()
+	key := fmt.Sprintf("%s-%s", clientId, targetId)
+
+	res := rdb.LRange(context.Background(), key, 0, -1).Val()
+	return res
 }
