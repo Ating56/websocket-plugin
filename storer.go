@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"log"
 )
 
 /*
@@ -28,7 +29,8 @@ func storeInRedis(clientId, targetId, msgDetail string) error {
 		return nil
 	})
 	if err != nil {
-		return errors.New("存储Redis失败: " + clientId + "to" + targetId)
+		log.Println("存储到Redis失败: "+clientId+"to"+targetId, "\terror is: ", err)
+		return errors.New("存储到Redis失败: " + clientId + "to" + targetId)
 	}
 
 	_, err = rdb.TxPipelined(context.Background(), func(pipeliner redis.Pipeliner) error {
@@ -40,7 +42,8 @@ func storeInRedis(clientId, targetId, msgDetail string) error {
 		return nil
 	})
 	if err != nil {
-		return errors.New("存储Redis失败: " + targetId + "to" + clientId)
+		log.Println("存储到Redis失败: "+targetId+"to"+clientId, "\terror is: ", err)
+		return errors.New("存储到Redis失败: " + targetId + "to" + clientId)
 	}
 
 	return nil

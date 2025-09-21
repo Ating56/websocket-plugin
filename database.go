@@ -2,6 +2,7 @@ package websocketplugin
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"log"
 
 	"github.com/redis/go-redis/v9"
@@ -37,11 +38,14 @@ func InitMDB(conf *MongoDB) {
 	if err != nil {
 		panic("failed to connect MongoDB: " + err.Error())
 	}
-	defer func() {
-		if err := mdb.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
+
+	// 发送ping验证连接成功
+	var result bson.M
+	if err := mdb.Database(conf.DataBase).RunCommand(context.TODO(), bson.D{{"ping", 1}}).Decode(&result); err != nil {
+		log.Println("MongoDB连接失败")
+		panic(err)
+	}
+
 	MDB = mdb
 	MCOLL = mdb.Database(conf.DataBase).Collection(conf.Collection)
 	log.Println("success to connect MongoDB")

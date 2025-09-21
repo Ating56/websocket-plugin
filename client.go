@@ -29,6 +29,7 @@ var GlobalRecv sync.Map
  * @param clientId 连接的客户端ID; targetId 发送目标客户端ID; msgDetail 消息相关内容，[]byte格式
  */
 func SendToServer(clientId, targetId string, msgDetail []byte) error {
+	// 二次组合消息内容, 加入targetId
 	msg := map[string][]byte{
 		"targetId":  []byte(targetId),
 		"msgDetail": msgDetail,
@@ -37,11 +38,19 @@ func SendToServer(clientId, targetId string, msgDetail []byte) error {
 	if recvChan, ok := GlobalRecv.Load(targetId); ok {
 		recvChan.(chan map[string][]byte) <- msg
 	}
-	// todo 持久化存储消息
+
+	// 存入redis
 	err := storeInRedis(clientId, targetId, string(msgDetail))
 	if err != nil {
 		return err
 	}
+
+	// 存入mongo
+	err = storeInMongo(clientId, targetId, string(msgDetail))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

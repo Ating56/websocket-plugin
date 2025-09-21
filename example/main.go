@@ -18,7 +18,7 @@ var Redis = wp.Redis{
 	DB:       0,
 }
 var MongoDB = wp.MongoDB{
-	DataSource: "mongodb://root:student@127.0.0.1:27017",
+	DataSource: "mongodb://root:your_password@127.0.0.1:27017",
 	DataBase:   "test",
 	Collection: "websocket",
 }
