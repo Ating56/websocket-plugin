@@ -1,6 +1,7 @@
 package websocketplugin
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -32,12 +33,12 @@ var upgrader = func(r *http.Request) *websocket.Upgrader {
  * 注册新client到GlobalHub
  * @param w http.ResponseWriter; r * http.Request; clientId 连接的客户端ID
  */
-func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) {
+func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) error {
 	go GlobalHub.Run()
 	conn, err := upgrader(r).Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error:", err)
-		return
+		return errors.New("客户端连接到服务端失败")
 	}
 
 	connectClient := &Client{
@@ -46,6 +47,8 @@ func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) {
 		RemoteAddr: r.RemoteAddr,
 	}
 	GlobalHub.register <- connectClient
+
+	return nil
 }
 
 /*
@@ -53,11 +56,13 @@ func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) {
  * 客户端断开连接, 写入GlobalHub的unregister
  * @param clientId 连接的客户端ID
  */
-func SetDisconnect(clientId string) {
+func SetDisconnect(clientId string) error {
 	client, ok := GlobalHub.clients[clientId]
 	if !ok {
 		log.Printf("Client not found: %s\n", clientId)
-		return
+		return errors.New("客户端断开连接失败, 客户端不存在")
 	}
 	GlobalHub.unregister <- client
+
+	return nil
 }
