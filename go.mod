@@ -1,4 +1,4 @@
-module websocket-plugin
+module github.com/wrainstops/websocket-plugin
 
 go 1.25.0
 
