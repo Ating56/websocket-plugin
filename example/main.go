@@ -1,15 +1,14 @@
 package main
 
 import (
-	// "github.com/Ating56/websocket-plugin"
-
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
-	wp "websocket-plugin"
+
+	wp "github.com/wrainstops/websocket-plugin"
 )
 
 var Redis = wp.Redis{
