@@ -6,16 +6,16 @@ import (
 
 // Redis
 type Redis struct {
-	Host     string
-	Password string
-	DB       int
+	Host     string // ip+port
+	Password string // pwd
+	DB       int    // 几号数据库
 }
 
 // MongoDB
 type MongoDB struct {
-	DataSource string
-	DataBase   string
-	Collection string
+	DataSource string // 数据源, 格式: mongodb://root:your_password@127.0.0.1:27017
+	DataBase   string // 数据库名
+	Collection string // 集合名
 }
 
 var onceConfig sync.Once
