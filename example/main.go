@@ -81,7 +81,7 @@ func main() {
 	http.HandleFunc("/getRedisList", func(w http.ResponseWriter, r *http.Request) {
 		clientId := r.Header.Get("ClientId")
 		targetId := r.Header.Get("TargetId")
-		res := wp.GetMessageListInRedis(clientId, targetId)
+		res, _ := wp.GetMessageListInRedis(clientId, targetId)
 		json.NewEncoder(w).Encode(res)
 	})
 	http.HandleFunc("/getMongoList", func(w http.ResponseWriter, r *http.Request) {

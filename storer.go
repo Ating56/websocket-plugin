@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"log"
+
+	"github.com/redis/go-redis/v9"
 )
 
 /*
@@ -17,6 +18,11 @@ import (
  */
 func storeInRedis(clientId, targetId, msgDetail string) error {
 	rdb := GetRDB()
+	if rdb == nil {
+		log.Println("Redis未初始化")
+		return errors.New("Redis未初始化")
+	}
+
 	key1 := fmt.Sprintf("%s-%s", clientId, targetId) // clientId-targetId
 	key2 := fmt.Sprintf("%s-%s", targetId, clientId) // targetId-clientId
 
@@ -59,10 +65,15 @@ func storeInRedis(clientId, targetId, msgDetail string) error {
  * 获取redis中与目标客户端的消息列表
  * @param clientId 客户端ID; targetId 目标客户端ID
  */
-func GetMessageListInRedis(clientId, targetId string) []string {
+func GetMessageListInRedis(clientId, targetId string) ([]string, error) {
 	rdb := GetRDB()
+	if rdb == nil {
+		log.Println("Redis未初始化")
+		return nil, errors.New("Redis未初始化")
+	}
+
 	key := fmt.Sprintf("%s-%s", clientId, targetId)
 
 	res := rdb.LRange(context.Background(), key, 0, -1).Val()
-	return res
+	return res, nil
 }

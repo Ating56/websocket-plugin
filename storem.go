@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"log"
 	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type MongoListRes struct {
@@ -25,6 +26,11 @@ type MongoListRes struct {
  */
 func storeInMongo(clientId, targetId, msgDetail string) error {
 	mcoll := GetMCOLL()
+	if mcoll == nil {
+		log.Println("MongoDB未初始化")
+		return errors.New("MongoDB未初始化")
+	}
+
 	fmt.Println("mcoll:", *mcoll)
 
 	key1 := fmt.Sprintf("%s-%s", clientId, targetId) // clientId-targetId
@@ -69,6 +75,11 @@ func storeInMongo(clientId, targetId, msgDetail string) error {
  */
 func GetMessageListInMongo(clientId, targetId, lastMessageId string, lastMessageTimeStamp, gap, limit int64) ([]MongoListRes, error) {
 	mcoll := GetMCOLL()
+	if mcoll == nil {
+		log.Println("MongoDB未初始化")
+		return nil, errors.New("MongoDB未初始化")
+	}
+
 	key := fmt.Sprintf("%s-%s", clientId, targetId)
 
 	opts := options.Find().SetSort(bson.D{{"_id", -1}})
