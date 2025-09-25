@@ -42,6 +42,12 @@ type MongoListReq struct {
 
 func main() {
 	wp.NewConfig(Redis, MongoDB)
+	// 启用MQ
+	wp.InitMQ(wp.MQconf{
+		Url:      "amqp://guest:guest@localhost:5672/",
+		Exchange: "websocket_exchange",
+		Queue:    "websocket_queue",
+	})
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		clientId := r.Header.Get("Sec-WebSocket-Protocol")
 		wp.SetConnect(w, r, clientId)
@@ -71,7 +77,12 @@ func main() {
 		}
 		fmt.Println("body", target.ReceiveId, target.Content, clientId)
 
-		wp.SendToServer(clientId, target.ReceiveId, dataSendToWs)
+		wp.SendToServer(wp.Message{
+			ClientId:  clientId,
+			TargetId:  target.ReceiveId,
+			MsgDetail: dataSendToWs,
+			TimeStamp: time.Now().Unix(),
+		})
 	})
 	http.HandleFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		clientId := r.Header.Get("ClientId")
