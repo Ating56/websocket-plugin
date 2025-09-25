@@ -14,7 +14,7 @@ import (
  * 将消息持久化到redis, 便于快速加载
  * 但redis中仅保存部分消息(暂定10条)
  * 每个聊天通道保存为一个list, 每条消息添加到两份list中(clientId-targetId; targetId-clientId)
- * @param clientId 客户端ID; targetId 发送目标客户端ID; msgDetail 需要存储的消息相关内容
+ * @param clientId 客户端Id; targetId 发送目标客户端Id; msgDetail 需要存储的消息相关内容
  */
 func storeInRedis(clientId, targetId, msgDetail string) error {
 	rdb := GetRDB()
@@ -63,7 +63,7 @@ func storeInRedis(clientId, targetId, msgDetail string) error {
 /*
  * GetMessageListInRedis
  * 获取redis中与目标客户端的消息列表
- * @param clientId 客户端ID; targetId 目标客户端ID
+ * @param clientId 客户端Id; targetId 目标客户端Id
  */
 func GetMessageListInRedis(clientId, targetId string) ([]string, error) {
 	rdb := GetRDB()

@@ -31,10 +31,15 @@ var upgrader = func(r *http.Request) *websocket.Upgrader {
  * 客户端连接到服务端
  * 升级HTTP连接为WebSocket连接
  * 注册新client到GlobalHub
- * @param w http.ResponseWriter; r * http.Request; clientId 连接的客户端ID
+ * @param w http.ResponseWriter; r * http.Request; clientId 连接的客户端Id
  */
 func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) error {
 	go GlobalHub.Run()
+
+	if GlobalMQInstance != nil {
+		go GlobalMQInstance.Consume()
+	}
+
 	conn, err := upgrader(r).Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error:", err)
@@ -54,7 +59,7 @@ func SetConnect(w http.ResponseWriter, r *http.Request, clientId string) error {
 /*
  * SetDisConnect
  * 客户端断开连接, 写入GlobalHub的unregister
- * @param clientId 连接的客户端ID
+ * @param clientId 连接的客户端Id
  */
 func SetDisconnect(clientId string) error {
 	client, ok := GlobalHub.clients[clientId]
