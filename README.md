@@ -5,6 +5,8 @@
 - [x] 建立websocket连接
 - [x] 给目标客户端发送消息
 - [x] 已连接的客户端自动接收消息
+- [x] 存储消息至Redis和MongoDB
+- [x] 支持MQ异步存储消息至MongoDB
 - [x] 查看消息记录
 
 ## 使用
@@ -41,6 +43,26 @@
     wp.NewConfig(Redis, MongoDB)
     ```
 
+### 启用MQ
+
+1. 可添加配置开启MQ，异步同步消息至MongoDB，结构体如下：
+    ```go
+    // MQ配置结构体
+    type MQconf struct {
+        Url      string // MQ地址
+        Exchange string // 交换机名称
+        Queue    string // 队列名称
+    }
+    ```
+2. 示例：
+    ```go
+    wp.InitMQ(wp.MQconf{
+        Url:      "amqp://guest:guest@localhost:5672/",
+        Exchange: "websocket_exchange",
+        Queue:    "websocket_queue",
+    })
+    ```
+
 ### 建立连接
 1. web-socket-plugin的upgrader设置了Subprotocols: []string{r.Header.Get("Sec-WebSocket-Protocol")}，用于用户身份认证
 2. 客户端建立连接并传递token参数
@@ -67,14 +89,20 @@
     ```
 
 ### 发送消息
-1. 发送消息是http请求，调用SendToServer，参数为：
+1. 发送消息是http请求，调用SendToServer，参数为Message结构体：
     - clientId(客户端Id)
     - targetId(目标客户端Id)
     - msgDetail(消息相关信息，[]byte类型)
+    - timeStamp(发送消息的时间戳)
 2. 示例：
     ```go
     data := `{"senderId": "1", "ReceiveId": "2", "content": "hello"}`
-    err := SendToServer(clientId, targetId, []byte(data))
+    err := wp.SendToServer(wp.Message{
+        ClientId:  clientId,
+        TargetId:  targetId,
+        MsgDetail: []byte(data),
+        TimeStamp: time.Now().Unix(),
+    })
     ```
 
 ### 查询消息记录Redis
@@ -85,7 +113,7 @@
     - targetId(目标客户端Id)
 4. 示例：
     ```go
-    res := GetMessageListInRedis(clientId, targetId)
+    res := wp.GetMessageListInRedis(clientId, targetId)
     ```
 
 ### 查询消息记录MongoDB
@@ -100,5 +128,5 @@
     - limit(查找的消息条数)
 4. 示例：
     ```go
-    res, err := GetMessageListInMongo(clientId, targetId, "", 0, 0, 10)
+    res, err := wp.GetMessageListInMongo(clientId, targetId, "", 0, 0, 10)
     ```

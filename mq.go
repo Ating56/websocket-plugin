@@ -93,6 +93,10 @@ func (rmq *RabbitMQ) Publish(message []byte) error {
 	return nil
 }
 
+/*
+ * Consume
+ * 从RabbitMQ队列消费消息
+ */
 func (rmq *RabbitMQ) Consume() {
 	// ExchangeDeclare
 	err := rmq.Ch.ExchangeDeclare(
