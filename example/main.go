@@ -48,6 +48,7 @@ func main() {
 		Exchange: "websocket_exchange",
 		Queue:    "websocket_queue",
 	})
+	defer wp.CloseMQ()
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		clientId := r.Header.Get("Sec-WebSocket-Protocol")
 		wp.SetConnect(w, r, clientId)
