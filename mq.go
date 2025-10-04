@@ -2,6 +2,7 @@ package websocketplugin
 
 import (
 	"log"
+	"sync"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -24,6 +25,7 @@ type RabbitMQ struct {
 	MQconf
 }
 
+var onceMQ sync.Once
 var GlobalMQInstance *RabbitMQ
 
 /*
@@ -44,11 +46,13 @@ func InitMQ(conf MQconf) (*RabbitMQ, error) {
 		return nil, err
 	}
 
-	GlobalMQInstance = &RabbitMQ{
-		Conn:   conn,
-		Ch:     ch,
-		MQconf: conf,
-	}
+	onceMQ.Do(func() {
+		GlobalMQInstance = &RabbitMQ{
+			Conn:   conn,
+			Ch:     ch,
+			MQconf: conf,
+		}
+	})
 
 	return GlobalMQInstance, nil
 }
@@ -162,4 +166,26 @@ func (rmq *RabbitMQ) Consume() {
 		}
 	}()
 	<-forever
+}
+
+/*
+ * CloseMQ
+ * 关闭MQ实例的connection和channel
+ */
+func CloseMQ() error {
+	if GlobalMQInstance.Conn != nil {
+		if err := GlobalMQInstance.Conn.Close(); err != nil {
+			log.Println("GlobalMQInstance.Conn关闭失败, error:", err)
+			return err
+		}
+	}
+
+	if GlobalMQInstance.Ch != nil {
+		if err := GlobalMQInstance.Ch.Close(); err != nil {
+			log.Println("GlobalMQInstance.Ch关闭失败, error:", err)
+			return err
+		}
+	}
+
+	return nil
 }
